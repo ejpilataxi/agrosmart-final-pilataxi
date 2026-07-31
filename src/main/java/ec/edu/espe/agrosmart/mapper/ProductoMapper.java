@@ -1,5 +1,6 @@
-package ec.edu.espe.agrosmart.model;
+package ec.edu.espe.agrosmart.mapper;
 
+import ec.edu.espe.agrosmart.domain.Producto;
 import ec.edu.espe.agrosmart.entity.ProductoEntity;
 
 import java.util.Arrays;
