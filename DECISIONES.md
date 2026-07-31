@@ -212,6 +212,22 @@ respuesta que produjo tu `onErrorResume`.
 
 ```
 Dentro de las configuraciones no obtuve un error, tal como se indica con los test unitario se comprobara y de existir el fallo se colocara el error.
+En la ejecucion posterior descubri el siguiente error
+StatusCode        : 200
+StatusDescription : OK
+Content           : Publicidad no disponible en este momento (ResourceAccessException)
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 66
+                    Content-Type: text/plain;charset=UTF-8
+                    
+                    Publicidad no disponible en este momento (ResourceAccessException)
+Forms             : {}
+Headers           : {[Content-Length, 66], [Content-Type, text/plain;charset=UTF-8]}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 66
 
 ```
 
@@ -222,17 +238,82 @@ Dentro de las configuraciones no obtuve un error, tal como se indica con los tes
 **6.1** Pega la salida real de tus cuatro `curl`.
 
 ```
+curl http://localhost:8114/api/productos                                                                           
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : [{"id":1,"nombre":"BANANO 
+                    CAVENDISH","categoria":"Banano","precioUsd":5.50,"correosNotificacion":["ventas@agrosmart.com"]},{"id":2,"nombre":"BANANO 
+                    ORGANICO","categoria":"Banano","precioUsd":8.75,"cor...
+RawContent        : HTTP/1.1 200 OK
+                    transfer-encoding: chunked
+                    Content-Type: application/json
+                    
+                    [{"id":1,"nombre":"BANANO CAVENDISH","categoria":"Banano","precioUsd":5.50,"correosNotificacion":["ventas@agrosmart.com"]...
+Forms             : {}
+Headers           : {[transfer-encoding, chunked], [Content-Type, application/json]}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 365
+
+curl http://localhost:8114/api/productos/2                                                                         
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : {"id":2,"nombre":"Banano Organico","categoria":"Banano","precioUsd":8.75,"correosNotificacion":["admin@agrosmart.com"]}
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 119
+                    Content-Type: application/json
+                    
+                    {"id":2,"nombre":"Banano Organico","categoria":"Banano","precioUsd":8.75,"correosNotificacion":["admin@agrosmart.com"]}
+Forms             : {}
+Headers           : {[Content-Length, 119], [Content-Type, application/json]}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 119
+
+curl.exe -i http://localhost:8114/api/productos/9999                                                               
+HTTP/1.1 404 Not Found
+Content-Type: application/json
+Content-Length: 127
+
+{"timestamp":"2026-07-31T11:41:05.259Z","path":"/api/productos/9999","status":404,"error":"Not Found","requestId":"ccd04955-5"}
+
+curl "http://localhost:8114/api/agrosmart/publicidad?producto=Banano%20Cavendish&audiencia=importadores%20europeos"
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : "Calidad y frescura en cada banano Cavendish: ¡la elección perfecta para tus clientes europeos!"
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 98
+                    Content-Type: text/plain;charset=UTF-8
+                    
+                    "Calidad y frescura en cada banano Cavendish: ¡la elección perfecta para tus clientes europeos!"
+Forms             : {}
+Headers           : {[Content-Length, 98], [Content-Type, text/plain;charset=UTF-8]}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 98
 
 ```
 
 **6.2** ¿Cómo lograste que el id inexistente responda **404** y no 500?
 
->
+>Lo logré agregando la anotación @ResponseStatus(HttpStatus.NOT_FOUND) en mi excepción ProductoNoEncontradoException. Así, cuando buscarPorId() no encuentra el producto y ejecuta switchIfEmpty(Mono.error(...)), Spring WebFlux convierte esa excepción en una respuesta HTTP 404 en lugar de devolver un error 500.
 
 **6.3** ¿Qué pasaría si tu controlador devolviera `List<Producto>` en lugar de
 `Flux<Producto>`? ¿Seguiría compilando? ¿Seguiría siendo no bloqueante?
 
->
+>Si mi controlador devolviera List<Producto> en lugar de Flux<Producto>, sí podría compilar porque Spring permite devolver listas normalmente. Pero ya no sería completamente no bloqueante, porque tendría que esperar a tener todos los productos cargados en memoria antes de responder. Con Flux<Producto>, los datos se manejan como un flujo reactivo y se pueden emitir conforme van llegando, manteniendo el modelo no bloqueante de WebFlux. 
 
 ---
 
