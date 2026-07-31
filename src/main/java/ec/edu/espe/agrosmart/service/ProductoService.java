@@ -1,8 +1,9 @@
 package ec.edu.espe.agrosmart.service;
 
-import ec.edu.espe.agrosmart.model.Producto;
-import ec.edu.espe.agrosmart.model.ProductoFilters;
-import ec.edu.espe.agrosmart.model.ProductoMapper;
+import ec.edu.espe.agrosmart.domain.Producto;
+import ec.edu.espe.agrosmart.domain.ProductoFilters;
+import ec.edu.espe.agrosmart.exception.ProductoNoEncontradoException;
+import ec.edu.espe.agrosmart.mapper.ProductoMapper;
 import ec.edu.espe.agrosmart.repository.ProductoRepository;
 
 import org.springframework.stereotype.Service;

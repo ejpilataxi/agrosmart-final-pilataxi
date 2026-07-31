@@ -1,4 +1,4 @@
-package ec.edu.espe.agrosmart.model;
+package ec.edu.espe.agrosmart.domain;
 
 import java.util.function.Consumer;
 import java.util.function.Function;

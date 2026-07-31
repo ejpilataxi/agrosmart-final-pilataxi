@@ -322,28 +322,38 @@ RawContentLength  : 98
 **7.1** Pega la salida real de tus pruebas (`./mvnw test` o `./gradlew test`).
 
 ```
+Results:
+[INFO] 
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  7.376 s
+[INFO] Finished at: 2026-07-31T07:05:00-05:00
+[INFO] ------------------------------------------------------------------------
 
 ```
 
 **7.2** ¿Cuántos productos espera tu `expectNextCount(...)` y por qué ese número
 concreto? Relaciónalo con tu semilla.
 
->
+>Mi expectNextCount(...) espera 3 productos porque en la prueba del servicio el repositorio mock devuelve una lista de prueba con cinco productos: tres productos válidos y dos inválidos. Los tres válidos tienen precio mayor a cero y correos configurados, por lo que pasan el filtro IS_VALID. Los otros dos productos son descartados por la lógica funcional, es decir se realizo con 3 productos para una simulacion con la data real.
 
 **7.3** ¿Por qué mockeaste `ProductoRepository` en lugar de dejar que la prueba consulte
 PostgreSQL?
 
->
+>Mockeé ProductoRepository porque quería probar solamente la lógica de ProductoService sin depender de una base de datos externa. De esta forma la prueba es más rápida, estable y puedo controlar exactamente los datos que recibe el servicio. Además, evito que la prueba falle por problemas de conexión, configuración o disponibilidad de PostgreSQL.
 
 **7.4** ¿Qué demuestra `assertNotSame` que `assertEquals` **no** demuestra en tu prueba
 de copia defensiva?
 
->
+> assertNotSame me permite comprobar que la lista que entrega el objeto no es la misma referencia que la lista original que envié al constructor. Esto demuestra que el Producto creó su propia copia interna y evita que cambios externos afecten su estado. En cambio, assertEquals solamente verifica que el contenido sea igual, pero no comprueba si son objetos diferentes en memoria.
 
 **7.5** ¿Por qué una prueba de un `Flux` que no llama a `verifyComplete()` (o a
 `verify()`) no está probando nada?
 
->
+>Porque un Flux es un flujo reactivo que no se ejecuta hasta que alguien se suscribe. Al usar verifyComplete() hago que la prueba consuma el flujo, valide las emisiones esperadas y confirme que terminó correctamente. Sin esa verificación, solo estaría creando el flujo, pero no estaría comprobando si realmente funciona o si presenta errores.
 
 ---
 

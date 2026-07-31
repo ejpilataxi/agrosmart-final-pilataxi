@@ -1,8 +1,7 @@
 package ec.edu.espe.agrosmart.controller;
 
-import ec.edu.espe.agrosmart.model.Producto;
+import ec.edu.espe.agrosmart.domain.Producto;
 import ec.edu.espe.agrosmart.service.AgroSmartAIClient;
-import ec.edu.espe.agrosmart.service.AgroSmartAIService;
 import ec.edu.espe.agrosmart.service.ProductoService;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
