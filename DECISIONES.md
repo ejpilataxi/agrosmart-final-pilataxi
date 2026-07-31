@@ -92,23 +92,33 @@ lo fuera? (piensa en la restricción `unique` de `nombre_producto`)
 **3.1** ¿Por qué tienes **dos** clases (`ProductoEntity` y `Producto`) en lugar de una?
 ¿Qué te impide hacer inmutable directamente la entidad de Hibernate?
 
->
+> Tengo dos clases porque cada una cumple una función diferente. ProductoEntity la uso para trabajar con la base de datos mediante Hibernate, mientras que Producto es mi modelo de dominio donde aplico la inmutabilidad.
+
+No hice la entidad de Hibernate inmutable porque Hibernate necesita poder crear y modificar los objetos cuando consulta la base de datos. Por eso necesita constructor vacío, setters o acceso para poder cargar la información. La inmutabilidad la aplico en el modelo de dominio para proteger los datos y evitar cambios inesperados.
 
 **3.2** Escribe el código exacto de **tus dos** copias defensivas e indica en qué línea
 está cada una.
 
 ```java
-
+//Copia defensiva de entrada
+this.correosNotificacion = new ArrayList<>(correosNotificacion); //linea
+//Copia defensiva de salida
+return Collections.unmodifiableList(
+        new ArrayList<>(correosNotificacion)
+);
 ```
 
 **3.3** ¿Por qué la copia defensiva **solo en el getter** no sería suficiente? Describe
 el ataque concreto que quedaría abierto sobre **tu** clase.
 
->
+>Porque aunque yo proteja la lista cuando la devuelvo, todavía quedaría expuesta la lista original que recibí en el constructor.
+
+Por ejemplo, si alguien crea una lista de correos y después de crear el objeto modifica esa misma lista, mi Producto también cambiaría porque estaría apuntando a la misma referencia.
 
 **3.4** ¿Cómo implementaste `A_MAYUSCULAS` para no mutar el `Producto` recibido?
 
 ```java
+Lo hice creando un nuevo objeto Producto con el nombre transformado a mayúsculas. No modifico el producto original porque la clase es inmutable y no tiene setters.
 
 ```
 
