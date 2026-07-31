@@ -130,28 +130,40 @@ Lo hice creando un nuevo objeto Producto con el nombre transformado a mayúscula
 
 ```java
 
+public Flux<Producto> obtenerProductosComercializables() {
+
+    return Mono.fromCallable(repository::findAll)
+            .subscribeOn(Schedulers.boundedElastic())
+            .flatMapMany(Flux::fromIterable)
+            .map(ProductoMapper::toDominio)
+            .map(ProductoFilters.A_MAYUSCULAS)
+            .filter(ProductoFilters.IS_VALID)
+            .doOnNext(ProductoFilters.LOG_PRODUCTO)
+            .defaultIfEmpty(PRODUCTO_GENERICO);
+}
+
 ```
 
 **4.2** ¿Qué pasa **exactamente** si eliminas
 `.subscribeOn(Schedulers.boundedElastic())` de ese método? Si lo probaste, indica qué
 hilo aparecía en el log antes y después.
 
->
+> Si elimino .subscribeOn(Schedulers.boundedElastic()), la consulta al repositorio JPA se ejecutaría en el mismo hilo que maneja la petición reactiva. Como repository.findAll() es bloqueante, podría bloquear el event loop de Netty y afectar otras solicitudes.
 
 **4.3** ¿Por qué `Mono.fromCallable(...)` y no `Mono.just(repository.findAll())`?
 (pista: cuándo se ejecuta cada uno)
 
->
+> Uso Mono.fromCallable(...) porque la llamada a repository.findAll() se ejecuta cuando alguien se suscribe al flujo, permitiendo que después pueda enviarla al boundedElastic. Si usara Mono.just(repository.findAll()), la consulta se ejecutaría inmediatamente al crear el objeto Mono, antes de que Reactor pueda controlar en qué hilo debe ejecutarse la operación bloqueante.
 
 **4.4** En **tu** código, ¿dónde usaste `defaultIfEmpty` y dónde `switchIfEmpty`, y por
 qué no son intercambiables en esos dos lugares?
 
->
+> Uso defaultIfEmpty en el método obtenerProductosComercializables(). Después de aplicar el filtro, si no queda ningún producto válido, devuelvo PRODUCTO_GENERICO como valor alternativo. Uso switchIfEmpty en el método buscarPorId(Long id). En ese caso, si no encuentro el producto, cambio el flujo vacío por un error usando ProductoNoEncontradoException. No son intercambiables porque defaultIfEmpty agrega un valor cuando el flujo queda vacío, mientras que switchIfEmpty permite reemplazar el flujo completo por otro Publisher, como un Mono.error().
 
 **4.5** ¿Por qué `doOnNext` no sirve para transformar el elemento, si aparentemente
 "recibe" el producto?
 
->
+> Porque doOnNext solamente ejecuta una acción secundaria sobre el elemento que recibe, por ejemplo imprimir información o registrar un log, pero no cambia el objeto que sigue en el flujo. Para transformar un producto uso map, porque ese operador recibe un elemento y devuelve otro. En mi caso uso A_MAYUSCULAS con map para crear un nuevo Producto con el nombre en mayúsculas sin modificar el original.
 
 ---
 
@@ -160,28 +172,62 @@ qué no son intercambiables en esos dos lugares?
 **5.1** Pega tu interfaz `AgroSmartAIService` completa.
 
 ```java
+package ec.edu.espe.agrosmart.service;
 
+import dev.langchain4j.service.UserMessage;
+import dev.langchain4j.service.V;
+import dev.langchain4j.service.spring.AiService;
+
+@AiService
+public interface AgroSmartAIService {
+
+    @UserMessage("""
+            Redacta una frase publicitaria de máximo 100 caracteres para vender \
+            {{producto}} dirigido a {{audiencia}}.
+            """)
+    String generarPublicidad(
+            @V("producto") String producto,
+            @V("audiencia") String audiencia
+    );
+}
 ```
 
 **5.2** ¿Qué hace `@V("producto")` y qué pasaría si lo quitaras dejando solo el
 parámetro?
 
->
+>@V("producto") me sirve para indicarle a LangChain4j qué valor debe reemplazar en la plantilla del prompt que genere en la parte donde está {{producto}}. Si lo quito y dejo solo el parámetro, LangChain4j no sabría con qué nombre relacionar ese argumento con la variable del prompt y podría fallar al intentar generar la respuesta porque no encontraría un valor para reemplazar {{producto}}.
 
 **5.3** ¿En qué archivo y con qué líneas configuraste el modelo? ¿Por qué **no** hizo
 falta declarar un `@Bean`?
 
->
+>Lo configuré en el archivo: application.properties utilizando propiedades propias de LangChain4j, debido a esto no hizo falta declarar un @Bean porque el starter de LangChain4j para Spring Boot ya crea y configura automáticamente el modelo usando esas propiedades.
 
 **5.4** ¿Por qué la llamada a la IA también necesita `boundedElastic`, si no es una
 consulta a base de datos?
 
->
+>Porque la llamada a la IA también es una operación bloqueante. Aunque no sea una consulta a la base de datos, internamente hace una petición HTTP esperando la respuesta del proveedor. Si la dejo en el hilo del event loop podría bloquearlo y afectar otras peticiones, por eso la mando a Schedulers.boundedElastic().
 
 **5.5** Si tu proveedor devolvió un error durante el examen, pega el mensaje real y la
 respuesta que produjo tu `onErrorResume`.
 
 ```
+Dentro de las configuraciones no obtuve un error, tal como se indica con los test unitario se comprobara y de existir el fallo se colocara el error.
+En la ejecucion posterior descubri el siguiente error
+StatusCode        : 200
+StatusDescription : OK
+Content           : Publicidad no disponible en este momento (ResourceAccessException)
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 66
+                    Content-Type: text/plain;charset=UTF-8
+                    
+                    Publicidad no disponible en este momento (ResourceAccessException)
+Forms             : {}
+Headers           : {[Content-Length, 66], [Content-Type, text/plain;charset=UTF-8]}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 66
 
 ```
 
@@ -192,17 +238,82 @@ respuesta que produjo tu `onErrorResume`.
 **6.1** Pega la salida real de tus cuatro `curl`.
 
 ```
+curl http://localhost:8114/api/productos                                                                           
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : [{"id":1,"nombre":"BANANO 
+                    CAVENDISH","categoria":"Banano","precioUsd":5.50,"correosNotificacion":["ventas@agrosmart.com"]},{"id":2,"nombre":"BANANO 
+                    ORGANICO","categoria":"Banano","precioUsd":8.75,"cor...
+RawContent        : HTTP/1.1 200 OK
+                    transfer-encoding: chunked
+                    Content-Type: application/json
+                    
+                    [{"id":1,"nombre":"BANANO CAVENDISH","categoria":"Banano","precioUsd":5.50,"correosNotificacion":["ventas@agrosmart.com"]...
+Forms             : {}
+Headers           : {[transfer-encoding, chunked], [Content-Type, application/json]}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 365
+
+curl http://localhost:8114/api/productos/2                                                                         
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : {"id":2,"nombre":"Banano Organico","categoria":"Banano","precioUsd":8.75,"correosNotificacion":["admin@agrosmart.com"]}
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 119
+                    Content-Type: application/json
+                    
+                    {"id":2,"nombre":"Banano Organico","categoria":"Banano","precioUsd":8.75,"correosNotificacion":["admin@agrosmart.com"]}
+Forms             : {}
+Headers           : {[Content-Length, 119], [Content-Type, application/json]}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 119
+
+curl.exe -i http://localhost:8114/api/productos/9999                                                               
+HTTP/1.1 404 Not Found
+Content-Type: application/json
+Content-Length: 127
+
+{"timestamp":"2026-07-31T11:41:05.259Z","path":"/api/productos/9999","status":404,"error":"Not Found","requestId":"ccd04955-5"}
+
+curl "http://localhost:8114/api/agrosmart/publicidad?producto=Banano%20Cavendish&audiencia=importadores%20europeos"
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : "Calidad y frescura en cada banano Cavendish: ¡la elección perfecta para tus clientes europeos!"
+RawContent        : HTTP/1.1 200 OK
+                    Content-Length: 98
+                    Content-Type: text/plain;charset=UTF-8
+                    
+                    "Calidad y frescura en cada banano Cavendish: ¡la elección perfecta para tus clientes europeos!"
+Forms             : {}
+Headers           : {[Content-Length, 98], [Content-Type, text/plain;charset=UTF-8]}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 98
 
 ```
 
 **6.2** ¿Cómo lograste que el id inexistente responda **404** y no 500?
 
->
+>Lo logré agregando la anotación @ResponseStatus(HttpStatus.NOT_FOUND) en mi excepción ProductoNoEncontradoException. Así, cuando buscarPorId() no encuentra el producto y ejecuta switchIfEmpty(Mono.error(...)), Spring WebFlux convierte esa excepción en una respuesta HTTP 404 en lugar de devolver un error 500.
 
 **6.3** ¿Qué pasaría si tu controlador devolviera `List<Producto>` en lugar de
 `Flux<Producto>`? ¿Seguiría compilando? ¿Seguiría siendo no bloqueante?
 
->
+>Si mi controlador devolviera List<Producto> en lugar de Flux<Producto>, sí podría compilar porque Spring permite devolver listas normalmente. Pero ya no sería completamente no bloqueante, porque tendría que esperar a tener todos los productos cargados en memoria antes de responder. Con Flux<Producto>, los datos se manejan como un flujo reactivo y se pueden emitir conforme van llegando, manteniendo el modelo no bloqueante de WebFlux. 
 
 ---
 
