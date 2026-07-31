@@ -172,28 +172,46 @@ qué no son intercambiables en esos dos lugares?
 **5.1** Pega tu interfaz `AgroSmartAIService` completa.
 
 ```java
+package ec.edu.espe.agrosmart.service;
 
+import dev.langchain4j.service.UserMessage;
+import dev.langchain4j.service.V;
+import dev.langchain4j.service.spring.AiService;
+
+@AiService
+public interface AgroSmartAIService {
+
+    @UserMessage("""
+            Redacta una frase publicitaria de máximo 100 caracteres para vender \
+            {{producto}} dirigido a {{audiencia}}.
+            """)
+    String generarPublicidad(
+            @V("producto") String producto,
+            @V("audiencia") String audiencia
+    );
+}
 ```
 
 **5.2** ¿Qué hace `@V("producto")` y qué pasaría si lo quitaras dejando solo el
 parámetro?
 
->
+>@V("producto") me sirve para indicarle a LangChain4j qué valor debe reemplazar en la plantilla del prompt que genere en la parte donde está {{producto}}. Si lo quito y dejo solo el parámetro, LangChain4j no sabría con qué nombre relacionar ese argumento con la variable del prompt y podría fallar al intentar generar la respuesta porque no encontraría un valor para reemplazar {{producto}}.
 
 **5.3** ¿En qué archivo y con qué líneas configuraste el modelo? ¿Por qué **no** hizo
 falta declarar un `@Bean`?
 
->
+>Lo configuré en el archivo: application.properties utilizando propiedades propias de LangChain4j, debido a esto no hizo falta declarar un @Bean porque el starter de LangChain4j para Spring Boot ya crea y configura automáticamente el modelo usando esas propiedades.
 
 **5.4** ¿Por qué la llamada a la IA también necesita `boundedElastic`, si no es una
 consulta a base de datos?
 
->
+>Porque la llamada a la IA también es una operación bloqueante. Aunque no sea una consulta a la base de datos, internamente hace una petición HTTP esperando la respuesta del proveedor. Si la dejo en el hilo del event loop podría bloquearlo y afectar otras peticiones, por eso la mando a Schedulers.boundedElastic().
 
 **5.5** Si tu proveedor devolvió un error durante el examen, pega el mensaje real y la
 respuesta que produjo tu `onErrorResume`.
 
 ```
+Dentro de las configuraciones no obtuve un error, tal como se indica con los test unitario se comprobara y de existir el fallo se colocara el error.
 
 ```
 
