@@ -130,28 +130,40 @@ Lo hice creando un nuevo objeto Producto con el nombre transformado a mayúscula
 
 ```java
 
+public Flux<Producto> obtenerProductosComercializables() {
+
+    return Mono.fromCallable(repository::findAll)
+            .subscribeOn(Schedulers.boundedElastic())
+            .flatMapMany(Flux::fromIterable)
+            .map(ProductoMapper::toDominio)
+            .map(ProductoFilters.A_MAYUSCULAS)
+            .filter(ProductoFilters.IS_VALID)
+            .doOnNext(ProductoFilters.LOG_PRODUCTO)
+            .defaultIfEmpty(PRODUCTO_GENERICO);
+}
+
 ```
 
 **4.2** ¿Qué pasa **exactamente** si eliminas
 `.subscribeOn(Schedulers.boundedElastic())` de ese método? Si lo probaste, indica qué
 hilo aparecía en el log antes y después.
 
->
+> Si elimino .subscribeOn(Schedulers.boundedElastic()), la consulta al repositorio JPA se ejecutaría en el mismo hilo que maneja la petición reactiva. Como repository.findAll() es bloqueante, podría bloquear el event loop de Netty y afectar otras solicitudes.
 
 **4.3** ¿Por qué `Mono.fromCallable(...)` y no `Mono.just(repository.findAll())`?
 (pista: cuándo se ejecuta cada uno)
 
->
+> Uso Mono.fromCallable(...) porque la llamada a repository.findAll() se ejecuta cuando alguien se suscribe al flujo, permitiendo que después pueda enviarla al boundedElastic. Si usara Mono.just(repository.findAll()), la consulta se ejecutaría inmediatamente al crear el objeto Mono, antes de que Reactor pueda controlar en qué hilo debe ejecutarse la operación bloqueante.
 
 **4.4** En **tu** código, ¿dónde usaste `defaultIfEmpty` y dónde `switchIfEmpty`, y por
 qué no son intercambiables en esos dos lugares?
 
->
+> Uso defaultIfEmpty en el método obtenerProductosComercializables(). Después de aplicar el filtro, si no queda ningún producto válido, devuelvo PRODUCTO_GENERICO como valor alternativo. Uso switchIfEmpty en el método buscarPorId(Long id). En ese caso, si no encuentro el producto, cambio el flujo vacío por un error usando ProductoNoEncontradoException. No son intercambiables porque defaultIfEmpty agrega un valor cuando el flujo queda vacío, mientras que switchIfEmpty permite reemplazar el flujo completo por otro Publisher, como un Mono.error().
 
 **4.5** ¿Por qué `doOnNext` no sirve para transformar el elemento, si aparentemente
 "recibe" el producto?
 
->
+> Porque doOnNext solamente ejecuta una acción secundaria sobre el elemento que recibe, por ejemplo imprimir información o registrar un log, pero no cambia el objeto que sigue en el flujo. Para transformar un producto uso map, porque ese operador recibe un elemento y devuelve otro. En mi caso uso A_MAYUSCULAS con map para crear un nuevo Producto con el nombre en mayúsculas sin modificar el original.
 
 ---
 
