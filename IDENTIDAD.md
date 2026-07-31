@@ -18,6 +18,6 @@
 
 ## Defensa oral
 
-Video de defensa del examen final (5 minutos):
+Video de defensa del examen final :
 
 https://drive.google.com/drive/folders/1Y84NzhZWdZfhZiPPckeFDk9wDsTrsWaB?usp=sharing
