@@ -28,23 +28,24 @@
 
 **1.1** ¿Qué archivo activa el perfil `prod` y qué línea exacta lo hace?
 
->
+>EL archivo que activa el perfil es application.properties y la linea que activa el perfil prod es: 'spring.profiles.active=prod'
 
 **1.2** Pega la línea del log de arranque donde se ve tu puerto y el perfil activo.
 
 ```
-
+2026-07-30T21:54:11.474-05:00  INFO 17468 --- [agrosmart] [           main] e.e.espe.agrosmart.AgrosmartApplication  : The following 1 profile is active: "prod"
+26-07-30T21:55:06.022-05:00  INFO 17468 --- [agrosmart] [           main] o.s.boot.reactor.netty.NettyWebServer    : Netty started on port 8114 (http)
 ```
 
 **1.3** ¿Qué habría pasado si dejabas `ddl-auto=create-drop` en lugar de `update`?
 Responde pensando en tus datos sembrados.
 
->
+> Si se usaba ddl-auto=create-drop, Hibernate habría creado las tablas al iniciar la aplicación y las habría eliminado al apagarla. Esto provocaría la pérdida de los datos sembrados cada vez que la aplicación se reinicie. El proceso de creacion de tablas se ejecutaria cada vez que encendamos la aplicacion y los datos no persisten lo contrario al update que si conserva estos datos.
 
 **1.4** ¿Levantaste PostgreSQL con `compose.yaml` (Opción A) o con una instalación local
 (Opción B)? ¿Qué ventaja tiene la que elegiste?
 
->
+>Utilize la opcion A para levantar PostgresSQL, La ventaja existente es que Docker Compose configura y ejecuta la base de datos automáticamente, sin necesidad de instalar PostgreSQL localmente ni crear manualmente la base de datos. 
 
 ---
 
