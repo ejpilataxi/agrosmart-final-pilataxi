@@ -362,20 +362,30 @@ de copia defensiva?
 **8.1** Pega tu `git log --oneline --graph --all`.
 
 ```
+git log --oneline --graph --all
+* 46bbc0a (HEAD -> feature/documentacion, feature/pruebas) test: agrega pruebas del modelo, logica funcional, flujo reactivo e ia
+* 6cc3c28 (feature/ia-langchain4j) feat: expone endpoints reactivos y de publicidad
+* 81d2dc2 feat: integra modulo de IA con LangChain4j y manejo reactivo de errores
+* b19d960 (feature/reactivo-servicio) feat: implementa servicio reactivo con boundedElastic y operadores
+* 076feed (feature/modelo-inmutable) feat: agrega modelo inmutable de producto y logica funcional
+* cf44e65 (feature/persistencia-jpa) feat: agrega entidad jpa de productos y siembra de datos
+* 0f83c45 (feature/config-perfiles) chore: configura perfil prod con postgresql y puerto propio 8114
+* e0aa629 (origin/main, origin/HEAD, main) chore: inicializa proyecto agrosmart y registra identidad del examen
+* 9c92d54 Initial commit
 
 ```
 
 **8.2** ¿Qué fase te tomó más tiempo del previsto y por qué?
 
->
+> La fase que más tiempo me tomó fue la Fase 4, donde implementé el servicio reactivo. Al inicio me costó entender cómo podía usar WebFlux si mi repositorio con JPA era bloqueante. Tuve que investigar y probar varias veces hasta comprender que no debía eliminar JPA, sino aislar esas operaciones usando boundedElastic para que no afectaran al flujo reactivo.
 
 **8.3** Si tuvieras 30 minutos más, ¿qué mejorarías **primero** de tu entrega y por qué
 esa y no otra?
 
->
+>Si tuviera 30 minutos más, mejoraría primero la integración con el modelo de IA. Revisaría la forma en que se generan las respuestas de publicidad para que sean más específicas según el producto y la audiencia recibida, buscando que los textos tengan mayor relación con el contexto comercial de AgroSmart. Elegiría esta mejora porque la funcionalidad principal ya está implementada, pero la calidad de la respuesta generada por la IA es lo que más impacto tendría en la experiencia final del usuario.
 
 **8.4** Declara honestamente qué herramientas consultaste durante el examen
 (documentación, apuntes, asistentes de IA) y para qué. **Esta declaración no descuenta
 puntaje**; su omisión o falsedad sí constituye falta de honestidad académica.
 
->
+>Durante el desarrollo consulté documentación oficial, ejemplos encontrados en internet para verificar la forma correcta de implementar ciertas partes del proyecto. También utilicé inteligencia artificial mediante ChatGPT como apoyo para revisar conceptos, resolver dudas puntuales y validar algunas implementaciones, especialmente durante la Fase 4 relacionada con programación reactiva, operadores de Reactor y el manejo del bloqueo de JPA con boundedElastic. Tambien con ayuda a la documentacion oficial e inteligencia artificial fui capaz de configurar correctamente el modelo demo ya que agrege la linea langchain4j.open-ai.chat-model.base-url=http://langchain4j.dev/demo/openai/v1 de esta forma el modelo comenzo a responder segun el promt configurado.
