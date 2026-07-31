@@ -15,3 +15,9 @@
 | Puerto perfil prod | 8114 |
 | Último dígito de la cédula | 4 |
 | Categoría asignada | Banano |
+
+## Defensa oral
+
+Video de defensa del examen final (5 minutos):
+
+https://drive.google.com/drive/folders/1Y84NzhZWdZfhZiPPckeFDk9wDsTrsWaB?usp=sharing
