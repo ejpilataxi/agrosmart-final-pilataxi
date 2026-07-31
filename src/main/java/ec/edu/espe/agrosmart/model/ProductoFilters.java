@@ -1,0 +1,40 @@
+package ec.edu.espe.agrosmart.model;
+
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+public class ProductoFilters {
+
+
+    public static final Predicate<Producto> IS_VALID =
+            producto ->
+                    producto.getPrecioUsd().compareTo(
+                            java.math.BigDecimal.ZERO
+                    ) > 0
+                            &&
+                            !producto.getCorreosNotificacion().isEmpty();
+
+
+
+    public static final Consumer<Producto> LOG_PRODUCTO =
+            producto ->
+                    System.out.println(
+                            "Producto procesado -> id: "
+                                    + producto.getId()
+                                    + ", nombre: "
+                                    + producto.getNombre()
+                    );
+
+
+
+    public static final Function<Producto, Producto> A_MAYUSCULAS =
+            producto ->
+                    new Producto(
+                            producto.getId(),
+                            producto.getNombre().toUpperCase(),
+                            producto.getCategoria(),
+                            producto.getPrecioUsd(),
+                            producto.getCorreosNotificacion()
+                    );
+}
